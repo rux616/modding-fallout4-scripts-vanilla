@@ -1,0 +1,3 @@
+Scriptname BoSR01DialogueVariables extends Quest Conditional
+
+Int Property BoSR01RhysNegativeResponse Auto Conditional

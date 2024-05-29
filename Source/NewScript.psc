@@ -1,0 +1,1 @@
+Scriptname newscript extends Quest  

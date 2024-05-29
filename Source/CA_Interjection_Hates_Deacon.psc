@@ -1,0 +1,1 @@
+Scriptname CA_Interjection_Hates_Deacon extends CA_Interjection_Hates Const

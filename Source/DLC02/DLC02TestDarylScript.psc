@@ -1,0 +1,1 @@
+Scriptname DLC02:DLC02TestDarylScript extends ObjectReference Const

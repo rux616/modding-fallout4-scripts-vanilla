@@ -1,0 +1,2 @@
+Scriptname DLC03:WorkshopRadiantOwned05Script extends DLC03:WorkshopRadiantOwnedScript Conditional
+

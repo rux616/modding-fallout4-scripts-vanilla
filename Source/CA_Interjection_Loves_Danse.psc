@@ -1,0 +1,1 @@
+Scriptname CA_Interjection_Loves_Danse extends CA_Interjection_Loves Const

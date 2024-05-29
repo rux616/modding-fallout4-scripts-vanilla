@@ -1,0 +1,3 @@
+Scriptname DialogueAbernathyFarmScripts extends Quest
+
+GlobalVariable Property pPlayerKnowsRaiders Auto Const

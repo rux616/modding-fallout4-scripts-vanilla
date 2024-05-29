@@ -1,0 +1,1 @@
+Scriptname MQ105Script extends Quest Conditional

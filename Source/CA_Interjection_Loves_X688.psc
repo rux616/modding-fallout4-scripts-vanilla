@@ -1,0 +1,1 @@
+Scriptname CA_Interjection_Loves_X688 extends CA_Interjection_Loves Const

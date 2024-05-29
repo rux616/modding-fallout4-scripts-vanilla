@@ -1,0 +1,1 @@
+Scriptname CA_Interjection_Dislikes_Cait extends CA_Interjection_Dislikes Const

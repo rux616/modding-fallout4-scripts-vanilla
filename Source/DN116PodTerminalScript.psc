@@ -1,0 +1,3 @@
+Scriptname DN116PodTerminalScript extends ObjectReference Conditional
+
+Bool Property bHasActivated Auto Conditional

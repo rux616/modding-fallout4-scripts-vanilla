@@ -1,0 +1,2 @@
+Scriptname BOSR05Script extends MinRecruitQuestScript Conditional
+

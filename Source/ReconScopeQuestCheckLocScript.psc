@@ -1,0 +1,10 @@
+Scriptname ReconScopeQuestCheckLocScript extends Quest
+
+Quest Property ReconScopeQuestCheckLoc Auto
+LocationAlias Property NavPointLocationAlias Auto
+ReferenceAlias Property NavPointLocationMapMarker Auto
+
+Function SetNavLocation(Location akLocation)
+	NavPointLocationAlias.ForceLocationTo(akLocation)
+
+EndFunction

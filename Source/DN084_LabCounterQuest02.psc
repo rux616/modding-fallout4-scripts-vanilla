@@ -1,0 +1,2 @@
+ScriptName DN084_LabCounterQuest02 extends DefaultCounterQuest Hidden
+{A DN084 name variant of DefaultCounterQuest. This counter is incremented by DN084_LabCounterAliasColIncOnDeath02, and sets a stage when its target value is reached.}

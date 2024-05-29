@@ -1,0 +1,1 @@
+Scriptname DLC01:DLC01REObjectKMK01 extends Quest

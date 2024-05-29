@@ -1,0 +1,3 @@
+Scriptname DialogueGlowingSeaAtomQuestScript extends Quest Conditional
+
+Int Property InitialGreeting Auto Conditional

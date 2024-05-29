@@ -1,0 +1,1 @@
+Scriptname DialogueAbernathyFarmBlake extends Quest Conditional

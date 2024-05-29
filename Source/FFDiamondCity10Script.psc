@@ -1,0 +1,3 @@
+Scriptname FFDiamondCity10Script extends Quest Conditional
+
+Int Property Var_PiperAtDoor Auto Conditional

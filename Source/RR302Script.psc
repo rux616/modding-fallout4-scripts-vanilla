@@ -1,0 +1,51 @@
+Scriptname RR302Script extends Quest Conditional
+
+; location properties
+Location Property HarvardPoliceStation Auto Const
+
+Event Actor.OnLocationChange(Actor akSender, Location akOldLoc, Location akNewLoc)
+	; watch for player to change location
+	if akSender == Game.GetPlayer()
+
+		;Debug.Trace("RR101Script: checking for change location conditions")
+		; If Piper has done her interview and the player has moved out of Diamond City, then RR101 is queued up to play
+		if GetStageDone(700) && !Game.GetPlayer().IsInLocation(HarvardPoliceStation)
+			;Debug.Trace("RR101Script: conditions match")
+			;setStage(800)
+		endif
+
+	endif
+EndEvent
+
+Int Property bTalkedToTinkAtPoliceStation Auto Conditional
+MQ00Script property MQ00 auto const
+bool initialized = false
+
+function InitializeQuest()
+	if initialized
+		return
+	endif
+
+	RegisterForCustomEvent(MQ00, "MQFactionKickOut")
+
+	Debug.Trace("RR302Script Intialized")
+
+	initialized = true
+endFunction
+
+; handle faction kickout event
+Event MQ00Script.MQFactionKickOut(MQ00Script akSender, Var[] akArgs)
+	;store off which faction we just got kicked out of
+	int kickoutFactionNumber = (akArgs[0] as int)
+
+	Debug.Trace("Received kickout event: " + kickoutFactionNumber)
+
+	if ( kickoutFactionNumber == 3 )     ; 3 is the Railroad
+		SetStage(20000)                   ; Fail the quest
+	endif
+
+	if ( kickoutFactionNumber == 4 )     ; 4 is the Insitute
+		SetStage(20000)                  ; Fail the quest
+	endif
+
+EndEvent

@@ -1,0 +1,1 @@
+Scriptname CA_Interjection_Dislikes_Strong extends CA_Interjection_Dislikes Const

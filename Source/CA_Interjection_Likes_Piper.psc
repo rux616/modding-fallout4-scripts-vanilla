@@ -1,0 +1,1 @@
+Scriptname CA_Interjection_Likes_Piper extends CA_Interjection_Likes Const

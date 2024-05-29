@@ -1,0 +1,1 @@
+Scriptname MS16DisableOnLoadScript extends ReferenceAlias

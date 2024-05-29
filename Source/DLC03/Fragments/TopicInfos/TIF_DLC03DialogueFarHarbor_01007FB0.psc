@@ -1,0 +1,17 @@
+;BEGIN FRAGMENT CODE - Do not edit anything between this and the end comment
+Scriptname DLC03:Fragments:TopicInfos:TIF_DLC03DialogueFarHarbor_01007FB0 Extends TopicInfo Hidden Const
+
+;BEGIN FRAGMENT Fragment_End
+Function Fragment_End(ObjectReference akSpeakerRef)
+Actor akSpeaker = akSpeakerRef as Actor
+;BEGIN AUTOCAST TYPE DLC03:DLC03DialogueFarHarborScript
+DLC03:DLC03DialogueFarHarborScript kmyQuest = GetOwningQuest() as DLC03:DLC03DialogueFarHarborScript
+;END AUTOCAST
+;BEGIN CODE
+; Signal you've made the speech challenge
+kmyQuest.SPEECHWright01 = 1
+;END CODE
+EndFunction
+;END FRAGMENT
+
+;END FRAGMENT CODE - Do not edit anything between this and the begin comment

@@ -1,0 +1,3 @@
+Scriptname DLC03:DialogueFarHarborGenericNPCsScript extends Quest Conditional
+
+Int Property bHeardOfRedDeath Auto Conditional

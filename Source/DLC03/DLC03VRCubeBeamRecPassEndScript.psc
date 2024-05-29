@@ -1,0 +1,1 @@
+Scriptname DLC03:DLC03VRCubeBeamRecPassEndScript extends ObjectReference Hidden

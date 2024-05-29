@@ -1,0 +1,675 @@
+Scriptname DLC04:DLC04BotModQuestScript extends Quest
+
+Int NumberOfUnlocks
+Struct ItemDatum
+
+Keyword BotModKeyword
+{Keyword applied by bot mod.}
+
+MiscObject ModMiscItem
+{MiscItem associated with the relevant mod.}
+
+GlobalVariable ModUnlockGlobal
+{Global unlock variable associated with the relevant mod.}
+
+Message DLC04BotModMessage
+{AUTOFILL: Message to display when the inventory item is picked up.}
+
+EndStruct
+
+Group AutoFillProperties
+ObjectMod Property DLC04Bot_Torso_MisterHandy_Armor const auto
+ObjectMod Property DLC04Bot_Torso_Nira_Armor_Front const auto
+ObjectMod Property DLC04Bot_Legs_Nira const auto
+ObjectMod Property DLC04Bot_Legs_Sentrybot const auto
+ObjectMod Property DLC04Bot_Head_Sentry_Space const auto
+ObjectMod Property DLC04Bot_Torso_Sentry_Armor_Space_Top const auto
+ObjectMod Property DLC04Bot_Head_Protectron_Armor_Space const auto
+ObjectMod Property DLC04Bot_Torso_Sentry_ShoulderLauncherCluster_Nuka_Left const auto
+ObjectMod Property DLC04Bot_Torso_Sentry_ShoulderLauncherCluster_Nuka_Right const auto
+FormList Property DLC04Workbench_MisterHandy_Armor_RemovalList const auto
+FormList Property DLC04Workbench_Torso_Nira_ExclusionList const auto
+FormList Property DLC04Workbench_Head_Sentry_Space_ExclusionTorsoList const auto
+FormList Property DLC04Workbench_Head_Sentry_Space_RemovalList const auto
+FormList Property DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList const auto
+FormList Property DLC04Workbench_Torso_Nira_Armor_Front_RemovalList const auto
+FormList Property DLC04Workbench_Paint_ExclusionList const auto
+FormList Property DLC04Workbench_Paint_RemovalList const auto
+
+Keyword Property DLC04BotMiscModKeyword const auto
+EndGroup
+
+ItemDatum[] Property ItemData const auto
+GlobalVariable Property DLC01AllowRobotModUnlocksGlobal Auto Hidden
+String sDLC01 = "DLCRobot.esm" const
+Bool bProcessBotModFormsAndListsHasRun = False
+
+Event OnInit()
+	CheckForDLCAndProcessVariablesAndRegisterForEvent()
+EndEvent
+
+Event Actor.OnPlayerLoadGame(actor akSource)
+    CheckForDLCAndProcessVariablesAndRegisterForEvent()
+EndEvent
+
+bool Function CheckForDLCAndProcessVariablesAndRegisterForEvent()
+	if Game.IsPluginInstalled(sDLC01)
+		debug.trace(self + "CheckForDLCAndProcessVariablesAndRegisterForEvent()")
+		DLC01AllowRobotModUnlocksGlobal = Game.GetFormFromFile(0x01010C99, sDLC01) as GlobalVariable
+
+		if !bProcessBotModFormsAndListsHasRun
+			bProcessBotModFormsAndListsHasRun = True
+			ProcessBotModFormsAndLists()
+		endif
+
+		;Listen for the player picking up items
+		RegisterForRemoteEvent(Game.GetPlayer(), "OnItemAdded")
+		;Only catch items with the keyword
+		AddInventoryEventFilter(DLC04BotMiscModKeyword)
+
+		return true
+	endif
+	return false
+EndFunction
+
+Function ProcessBotModFormsAndLists()
+	;Mod exclusion list, the corresponding entry is removed in removal list
+	Formlist DLC01Workbench_ExclusionList = Game.GetFormFromFile(0x010101F8, sDLC01) as Formlist
+	;Corresponding removal list
+	Formlist DLC01Workbench_RemovalList = Game.GetFormFromFile(0x010101F7, sDLC01) as Formlist
+	;Removal List for all handy hands
+	Formlist DLC01Workbench_RemovalListHandyHands = Game.GetFormFromFile(0x01000945, sDLC01) as Formlist
+	;List for races
+	FormList RobotWorkbench_ProtectronRaceMods = Game.GetFormFromFile(0x0100F9B5, sDLC01) as FormList
+	FormList RobotWorkbench_SentryRaceMods = Game.GetFormFromFile(0x0100F9B2, sDLC01) as FormList
+	;List for Protectron dome armor removal
+	FormList DLC01Workbench_RemovalListProtectronHeadDomeArmors = Game.GetFormFromFile(0x0100094D, sDLC01) as FormList
+	;List to remove shoulder mods
+	FormList DLC01Workbench_RemovalListShoulder = Game.GetFormFromFile(0x01002EA9, sDLC01) as FormList
+	;Protectron head mod
+	ObjectMod DLC01Bot_Head_Protectron_Limb = Game.GetFormFromFile(0x0100196C, sDLC01) as ObjectMod
+
+	;Add DLC04 Protectron Head Space armor to Protectron dome list
+	DLC01Workbench_RemovalListProtectronHeadDomeArmors.AddForm(DLC04Bot_Head_Protectron_Armor_Space)
+
+	;Add DLC04 mods to DLC01 exclusion lists
+	DLC01Workbench_ExclusionList.AddForm(DLC04Bot_Torso_MisterHandy_Armor)
+	DLC01Workbench_ExclusionList.AddForm(DLC04Workbench_Torso_Nira_ExclusionList)
+	DLC01Workbench_ExclusionList.AddForm(DLC04Workbench_Head_Sentry_Space_ExclusionTorsoList)
+	DLC01Workbench_ExclusionList.AddForm(DLC04Bot_Head_Sentry_Space)
+	DLC01Workbench_ExclusionList.AddForm(DLC04Bot_Torso_Sentry_Armor_Space_Top)
+	DLC01Workbench_ExclusionList.AddForm(DLC04Bot_Torso_Nira_Armor_Front)
+	DLC01Workbench_ExclusionList.AddForm(DLC01Bot_Head_Protectron_Limb)
+	DLC01Workbench_ExclusionList.AddForm(DLC04Workbench_Paint_ExclusionList)
+
+	;Add DLC04 mods to DLC01 removal lists, MATCH ORDER
+	DLC01Workbench_RemovalList.AddForm(DLC04Workbench_MisterHandy_Armor_RemovalList)
+	DLC01Workbench_RemovalList.AddForm(DLC04Bot_Torso_Nira_Armor_Front)
+	DLC01Workbench_RemovalList.AddForm(DLC04Bot_Head_Sentry_Space)
+	DLC01Workbench_RemovalList.AddForm(DLC04Workbench_Head_Sentry_Space_RemovalList)
+	DLC01Workbench_RemovalList.AddForm(DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList)
+	DLC01Workbench_RemovalList.AddForm(DLC04Workbench_Torso_Nira_Armor_Front_RemovalList)
+	DLC01Workbench_RemovalList.AddForm(DLC04Bot_Head_Protectron_Armor_Space)
+	DLC01Workbench_RemovalList.AddForm(DLC04Workbench_Paint_RemovalList)
+
+	;Add DLC04 legs to race mod lists
+	RobotWorkbench_ProtectronRaceMods.AddForm(DLC04Bot_Legs_Nira)
+	RobotWorkbench_SentryRaceMods.AddForm(DLC04Bot_Legs_Sentrybot)
+
+	;Mods for Nira torso exclusion list
+	ObjectMod DLC01Bot_Legs_Sentry_Limb = Game.GetFormFromFile(0x01001991, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_RoboBrain_Limb = Game.GetFormFromFile(0x01001CD4, sDLC01) as ObjectMod
+
+	;Add legs to Nira torso exclusion list
+	DLC04Workbench_Torso_Nira_ExclusionList.AddForm(DLC01Bot_Legs_Sentry_Limb)
+	DLC04Workbench_Torso_Nira_ExclusionList.AddForm(DLC01Bot_Legs_RoboBrain_Limb)
+
+	;Add shoulder mods to shoulder removal list
+	DLC01Workbench_RemovalListShoulder.AddForm(DLC04Bot_Torso_Sentry_ShoulderLauncherCluster_Nuka_Left)
+	DLC01Workbench_RemovalListShoulder.AddForm(DLC04Bot_Torso_Sentry_ShoulderLauncherCluster_Nuka_Right)
+
+	;Mods for NIRA armor to remove
+	ObjectMod DLC01Bot_Head_Assaultron_Limb = Game.GetFormFromFile(0x0100196D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_Assaultron_PAM_Limb = Game.GetFormFromFile(0x0100196E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_RoboBrain_Jezebel_Limb = Game.GetFormFromFile(0x01010399, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_RoboBrain_Limb = Game.GetFormFromFile(0x01001CD5, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_Sentry_Limb = Game.GetFormFromFile(0x0100196F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_Sentry_Type1_Limb = Game.GetFormFromFile(0x0100A757, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Protectron_Armor_Construction01_Rear = Game.GetFormFromFile(0x0101012E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Protectron_Armor_Standard_Rear = Game.GetFormFromFile(0x01001999, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Protectron_Armor_Construction10_Rear = Game.GetFormFromFile(0x01010130, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Protectron_Armor_Wasteland01_Rear = Game.GetFormFromFile(0x01010316, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Protectron_Armor_Construction09_Rear = Game.GetFormFromFile(0x0101012F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Protectron_Armor_Wasteland10_Rear = Game.GetFormFromFile(0x0100418D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Protectron_Armor_Satchel_Wasteland10_Rear = Game.GetFormFromFile(0x0100E321, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Protectron_Armor_Satchel_Wasteland01_Waist = Game.GetFormFromFile(0x0100E31F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Wasteland01_Waist = Game.GetFormFromFile(0x010073E2, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Protectron_Armor_Wasteland01_Waist = Game.GetFormFromFile(0x010073E1, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Satchel_Wasteland01_Waist = Game.GetFormFromFile(0x0100E31A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Satchel_Standard_Waist = Game.GetFormFromFile(0x0100E319, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Protectron_Armor_Satchel_Standard_Waist = Game.GetFormFromFile(0x0100E31E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Construction09_Right = Game.GetFormFromFile(0x0100FA03, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Protectron_Armor_Construction09_Right = Game.GetFormFromFile(0x01010129, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Construction10_Right = Game.GetFormFromFile(0x0100F44F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Protectron_Armor_Construction10_Right = Game.GetFormFromFile(0x0101012A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Construction01_Right = Game.GetFormFromFile(0x0100FD59, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Protectron_Armor_Construction01_Right = Game.GetFormFromFile(0x01010128, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Construction10_Waist = Game.GetFormFromFile(0x0100F451, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Construction09_Left = Game.GetFormFromFile(0x0100FA02, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Protectron_Armor_Construction09_Left = Game.GetFormFromFile(0x01010126, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Construction10_Left = Game.GetFormFromFile(0x0100F44E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Protectron_Armor_Construction10_Left = Game.GetFormFromFile(0x01010127, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Assaultron_Armor_Construction01_Left = Game.GetFormFromFile(0x0100FD58, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Legs_Protectron_Armor_Construction01_Left = Game.GetFormFromFile(0x01010125, sDLC01) as ObjectMod
+
+	;Add mods to NIRA armor removal list
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Head_Assaultron_Limb)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Head_Assaultron_PAM_Limb)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Head_Protectron_Limb)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Head_RoboBrain_Jezebel_Limb)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Head_RoboBrain_Limb)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Head_Sentry_Limb)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Head_Sentry_Type1_Limb)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Torso_Protectron_Armor_Construction01_Rear)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Torso_Protectron_Armor_Standard_Rear)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Torso_Protectron_Armor_Construction10_Rear)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Torso_Protectron_Armor_Wasteland01_Rear)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Torso_Protectron_Armor_Construction09_Rear)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Torso_Protectron_Armor_Wasteland10_Rear)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Torso_Protectron_Armor_Satchel_Wasteland10_Rear)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Protectron_Armor_Satchel_Wasteland01_Waist)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Wasteland01_Waist)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Protectron_Armor_Wasteland01_Waist)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Satchel_Wasteland01_Waist)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Satchel_Standard_Waist)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Protectron_Armor_Satchel_Standard_Waist)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Construction09_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Protectron_Armor_Construction09_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Construction10_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Protectron_Armor_Construction10_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Construction01_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Protectron_Armor_Construction01_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Construction10_Waist)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Construction09_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Protectron_Armor_Construction09_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Construction10_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Protectron_Armor_Construction10_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Assaultron_Armor_Construction01_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Legs_Protectron_Armor_Construction01_Left)
+
+	;Mr.Handy torso armors to remove when Nuka armor installed
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Construction01_Front = Game.GetFormFromFile(0x0100FF4F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Construction01_Top = Game.GetFormFromFile(0x0100FF51, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Construction09_Front = Game.GetFormFromFile(0x0100FF5B, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Construction09_Top = Game.GetFormFromFile(0x0100FF57, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Construction10_Front = Game.GetFormFromFile(0x0101003F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Construction10_Top = Game.GetFormFromFile(0x0100FF58, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Satchel_Standard_Front = Game.GetFormFromFile(0x0101003E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Satchel_Standard_Top = Game.GetFormFromFile(0x01010040, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Satchel_Wasteland01_Front = Game.GetFormFromFile(0x0101003D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Standard_Front = Game.GetFormFromFile(0x0100197F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Standard_Top = Game.GetFormFromFile(0x01001983, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland01_Front = Game.GetFormFromFile(0x0100FF66, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland01_Top = Game.GetFormFromFile(0x0100FF7A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland02_Front = Game.GetFormFromFile(0x0100FF67, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland03_Front = Game.GetFormFromFile(0x0100FF68, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland03_Top = Game.GetFormFromFile(0x0100FF7B, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland04_Front = Game.GetFormFromFile(0x0100FF69, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland05_Top = Game.GetFormFromFile(0x0100FF7C, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland06_Front = Game.GetFormFromFile(0x0100FF6A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland07_Front = Game.GetFormFromFile(0x0100FF6B, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland08_Front = Game.GetFormFromFile(0x0100FF6C, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland09_Front = Game.GetFormFromFile(0x0100FF6D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland09_Top = Game.GetFormFromFile(0x0100FF7D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland10_Front = Game.GetFormFromFile(0x01004158, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Armor_Wasteland10_Top = Game.GetFormFromFile(0x0100416B, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Construction01 = Game.GetFormFromFile(0x0100FF52, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Construction01_Left = Game.GetFormFromFile(0x01000A6D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Construction01_Right = Game.GetFormFromFile(0x01000A72, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Construction10 = Game.GetFormFromFile(0x0100FF5A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Construction10_Left = Game.GetFormFromFile(0x01000A73, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Construction10_Right = Game.GetFormFromFile(0x01000A74, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland01 = Game.GetFormFromFile(0x0100FF62, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland01_Left = Game.GetFormFromFile(0x01000A9B, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland01_Right = Game.GetFormFromFile(0x01000AA2, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland02 = Game.GetFormFromFile(0x0100FF63, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland02_Left = Game.GetFormFromFile(0x01000AA6, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland02_Right = Game.GetFormFromFile(0x01000AA9, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland04 = Game.GetFormFromFile(0x0100FF64, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland04_Left = Game.GetFormFromFile(0x01000AAF, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland04_Right = Game.GetFormFromFile(0x01000AB0, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland08 = Game.GetFormFromFile(0x0100FF65, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland08_Left = Game.GetFormFromFile(0x01000AB3, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland08_Right = Game.GetFormFromFile(0x01000AB5, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland10 = Game.GetFormFromFile(0x01004159, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland10_Left = Game.GetFormFromFile(0x01000AB6, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland10_Right = Game.GetFormFromFile(0x01000AB7, sDLC01) as ObjectMod
+
+	;Add DLC01 mods to DLC04 removal list for Mr.Handy Nuka armor conflicts
+	;debug.trace(self + "CheckForDLCAndProcessVariablesAndRegisterForEvent() DLC04Workbench_MisterHandy_Armor_RemovalList:" + DLC04Workbench_MisterHandy_Armor_RemovalList)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Construction01_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Construction01_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Construction09_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Construction09_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Construction10_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Construction10_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Satchel_Standard_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Satchel_Standard_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Satchel_Wasteland01_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Standard_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Standard_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland01_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland01_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland02_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland03_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland03_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland04_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland05_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland06_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland07_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland08_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland09_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland09_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland10_Front)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Armor_Wasteland10_Top)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Construction01)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Construction01_Left)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Construction01_Right)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Construction10)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Construction10_Left)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Construction10_Right)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland01)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland01_Left)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland01_Right)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland02)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland02_Left)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland02_Right)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland04)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland04_Left)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland04_Right)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland08)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland08_Left)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland08_Right)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland10)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland10_Left)
+	DLC04Workbench_MisterHandy_Armor_RemovalList.AddForm(DLC01Bot_Torso_MrHandy_Eye_Armor_Wasteland10_Right)
+
+	;Torso limbs for Senty Space Head removal
+	ObjectMod DLC01Bot_Torso_Assaultron_Limb = Game.GetFormFromFile(0x010019A9, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Protectron_Limb = Game.GetFormFromFile(0x0100198F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Robobrain_Limb = Game.GetFormFromFile(0x01001CD3, sDLC01) as ObjectMod
+
+	;Add DLC01 torsos to DLC04 exclusion list for Sentry Head Space Armor conflict
+	DLC04Workbench_Head_Sentry_Space_ExclusionTorsoList.AddForm(DLC01Bot_Torso_Robobrain_Limb)
+	DLC04Workbench_Head_Sentry_Space_ExclusionTorsoList.AddForm(DLC01Bot_Torso_Protectron_Limb)
+	DLC04Workbench_Head_Sentry_Space_ExclusionTorsoList.AddForm(DLC01Bot_Torso_Assaultron_Limb)
+
+	;Armors to remove for Sentry Space Head
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Construction01_Front = Game.GetFormFromFile(0x0100F94A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Construction09_Front = Game.GetFormFromFile(0x0100F94B, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Construction10_Front = Game.GetFormFromFile(0x0100DCA2, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Wasteland01_Front = Game.GetFormFromFile(0x01003629, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Wasteland05_Front = Game.GetFormFromFile(0x0100EB65, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Wasteland06_Front = Game.GetFormFromFile(0x0100EB66, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Wasteland07_Front = Game.GetFormFromFile(0x0100EB67, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Wasteland08_Front = Game.GetFormFromFile(0x0100EB68, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Wasteland10_Front = Game.GetFormFromFile(0x0100EA79, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Satchel_Wasteland01_Front = Game.GetFormFromFile(0x0100EA78, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Torso_Sentry_Armor_Satchel_Wasteland10_Front = Game.GetFormFromFile(0x0100EA78, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_Sentry_Armor_Wasteland07 = Game.GetFormFromFile(0x0100EB53, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_Sentry_Armor_Wasteland10_Unstable = Game.GetFormFromFile(0x0100EB55, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_Sentry_Armor_Construction10 = Game.GetFormFromFile(0x0100DCA1, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_Sentry_Armor_Wasteland08_Unstable = Game.GetFormFromFile(0x0100FE79, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Head_Sentry_Armor_Wasteland11_Unstable = Game.GetFormFromFile(0x0100FE76, sDLC01) as ObjectMod
+
+	;Add DLC01 mods to DLC04 removal list for Sentry Space Head conflicts
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Construction01_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Construction09_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Construction10_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Wasteland01_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Wasteland05_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Wasteland06_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Wasteland07_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Wasteland08_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Wasteland10_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Satchel_Wasteland01_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Torso_Sentry_Armor_Satchel_Wasteland10_Front)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Head_Sentry_Armor_Wasteland07)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Head_Sentry_Armor_Wasteland10_Unstable)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Head_Sentry_Armor_Construction10)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Head_Sentry_Armor_Wasteland08_Unstable)
+	DLC04Workbench_Head_Sentry_Space_RemovalList.AddForm(DLC01Bot_Head_Sentry_Armor_Wasteland11_Unstable)
+
+	;Arm armors to remove for Sentry Space Armor Top and NIRA torso front armor
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Construction01_Left = Game.GetFormFromFile(0x0100FD54, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Construction01_Right = Game.GetFormFromFile(0x0100FD55, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Construction09_Left = Game.GetFormFromFile(0x0100F9FE, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Construction09_Right = Game.GetFormFromFile(0x0100F9FF, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Construction10_Left = Game.GetFormFromFile(0x0100F449, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Construction10_Right = Game.GetFormFromFile(0x0100F44A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Standard_Left = Game.GetFormFromFile(0x010019AC, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Standard_Right = Game.GetFormFromFile(0x010019AD, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland01_Left = Game.GetFormFromFile(0x01003632, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland01_Right = Game.GetFormFromFile(0x01003634, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland02_Left = Game.GetFormFromFile(0x0100F8C0, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland02_Right = Game.GetFormFromFile(0x0100F8C8, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland03_Left = Game.GetFormFromFile(0x0100F8C1, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland03_Right = Game.GetFormFromFile(0x0100F8C9, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland04_Left = Game.GetFormFromFile(0x0100F8C2, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland04_Right = Game.GetFormFromFile(0x0100F8CA, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland05_Left = Game.GetFormFromFile(0x0100F8C3, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland05_Right = Game.GetFormFromFile(0x0100F8CB, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland06_Left = Game.GetFormFromFile(0x0100F8C4, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland06_Right = Game.GetFormFromFile(0x0100F8CC, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland07_Left = Game.GetFormFromFile(0x0100F8C5, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland07_Right = Game.GetFormFromFile(0x0100F8CD, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland08_Left = Game.GetFormFromFile(0x0100F8C6, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland08_Right = Game.GetFormFromFile(0x0100F8CE, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland09_Left = Game.GetFormFromFile(0x0100F8C7, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland09_Right = Game.GetFormFromFile(0x0100F8CF, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland10_Left = Game.GetFormFromFile(0x0100415D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Assaultron_Armor_Wasteland10_Right = Game.GetFormFromFile(0x0100415E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Protectron_Armor_Standard_Left = Game.GetFormFromFile(0x0100199A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Protectron_Armor_Standard_Right = Game.GetFormFromFile(0x010019AB, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Protectron_Armor_Wasteland01_Left = Game.GetFormFromFile(0x0101030D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Protectron_Armor_Wasteland01_Right = Game.GetFormFromFile(0x0101030E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Protectron_Armor_Wasteland10_Left = Game.GetFormFromFile(0x01004185, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Protectron_Armor_Wasteland10_Right = Game.GetFormFromFile(0x01004186, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Robobrain_Armor_Construction01_Left = Game.GetFormFromFile(0x0100D637, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Robobrain_Armor_Construction01_Right = Game.GetFormFromFile(0x0100D639, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Robobrain_Armor_Construction09_Left = Game.GetFormFromFile(0x0100FFCC, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Robobrain_Armor_Construction09_Right = Game.GetFormFromFile(0x0100FFCD, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Robobrain_Armor_Construction10_Left = Game.GetFormFromFile(0x0100D638, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Robobrain_Armor_Construction10_Right = Game.GetFormFromFile(0x0100D63A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Robobrain_Armor_Wasteland01_Left = Game.GetFormFromFile(0x0100FD3C, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_RoboBrain_Armor_Wasteland01_Right = Game.GetFormFromFile(0x0100FD3D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Robobrain_Armor_Wasteland02_Left = Game.GetFormFromFile(0x0100FD3E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_RoboBrain_Armor_Wasteland02_Right = Game.GetFormFromFile(0x0100FD3F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Robobrain_Armor_Wasteland10_Left = Game.GetFormFromFile(0x01004F34, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_RoboBrain_Armor_Wasteland10_Right = Game.GetFormFromFile(0x01004F36, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Construction01_Left = Game.GetFormFromFile(0x0100F946, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Construction01_Right = Game.GetFormFromFile(0x0100F948, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Construction09_Left = Game.GetFormFromFile(0x0100F947, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Construction09_Right = Game.GetFormFromFile(0x0100F949, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Construction10_Left = Game.GetFormFromFile(0x0100DC9F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Construction10_Right = Game.GetFormFromFile(0x0100DCA0, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Standard_Left = Game.GetFormFromFile(0x0100199E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Standard_Right = Game.GetFormFromFile(0x0100199F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland01_Left = Game.GetFormFromFile(0x0100362B, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland01_Right = Game.GetFormFromFile(0x0100362C, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland02_Left = Game.GetFormFromFile(0x0100EB43, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland02_Right = Game.GetFormFromFile(0x0100EB4A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland03_Left = Game.GetFormFromFile(0x0100EB44, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland03_Right = Game.GetFormFromFile(0x0100EB4B, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland04_Left = Game.GetFormFromFile(0x0100EB45, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland04_Right = Game.GetFormFromFile(0x0100EB4C, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland05_Left = Game.GetFormFromFile(0x0100EB46, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland05_Right = Game.GetFormFromFile(0x0100EB4D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland08_Left = Game.GetFormFromFile(0x0100EB47, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland08_Right = Game.GetFormFromFile(0x0100EB4E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland09_Left = Game.GetFormFromFile(0x0100EB48, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland09_Right = Game.GetFormFromFile(0x0100EB4F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland10_Left = Game.GetFormFromFile(0x0100EB49, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Arm_Sentry_Armor_Wasteland10_Right = Game.GetFormFromFile(0x0100EB50, sDLC01) as ObjectMod
+
+	;Add DLC01 arm armor mods to DLC04 removal list for Sentry Space Armor Top
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction01_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction01_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction09_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction09_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction10_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction10_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Standard_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Standard_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland01_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland01_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland02_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland02_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland03_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland03_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland04_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland04_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland05_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland05_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland06_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland06_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland07_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland07_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland08_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland08_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland09_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland09_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland10_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland10_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Standard_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Standard_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Wasteland01_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Wasteland01_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Wasteland10_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Wasteland10_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction01_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction01_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction09_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction09_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction10_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction10_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Wasteland01_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_RoboBrain_Armor_Wasteland01_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Wasteland02_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_RoboBrain_Armor_Wasteland02_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Wasteland10_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_RoboBrain_Armor_Wasteland10_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction01_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction01_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction09_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction09_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction10_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction10_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Standard_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Standard_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland01_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland01_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland02_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland02_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland03_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland03_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland04_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland04_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland05_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland05_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland08_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland08_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland09_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland09_Right)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland10_Left)
+	DLC04Workbench_Torso_Sentry_Armor_Space_Top_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland10_Right)
+
+	;Add arm armors to NIRA torso removal list
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland04_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland04_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland10_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland10_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_RoboBrain_Armor_Wasteland10_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction09_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction09_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction09_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland05_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland05_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland06_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland01_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_RoboBrain_Armor_Wasteland01_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland01_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland09_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland09_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction10_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction10_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction10_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_RoboBrain_Armor_Wasteland02_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland02_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Wasteland10_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland02_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Standard_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Standard_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Standard_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland03_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Wasteland01_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland03_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland07_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland08_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland08_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction01_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction01_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction01_Right)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland04_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland04_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland10_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland10_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Wasteland10_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction09_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction09_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction09_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland05_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland05_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland06_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland01_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Wasteland01_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland01_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland09_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland09_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction10_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction10_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction10_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Wasteland02_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland02_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Wasteland10_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland02_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Standard_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Standard_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Standard_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland03_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Protectron_Armor_Wasteland01_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland03_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland07_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Wasteland08_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Wasteland08_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Assaultron_Armor_Construction01_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Robobrain_Armor_Construction01_Left)
+	DLC04Workbench_Torso_Nira_Armor_Front_RemovalList.AddForm(DLC01Bot_Arm_Sentry_Armor_Construction01_Left)
+
+	;Paint mods
+	ObjectMod DLC01Bot_Paint_Aqua = Game.GetFormFromFile(0x0100FE65, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Black = Game.GetFormFromFile(0x01010FD5, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Blue = Game.GetFormFromFile(0x0100FE66, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_BlueDk = Game.GetFormFromFile(0x0100FE67, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_BlueLt = Game.GetFormFromFile(0x0100FE68, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Brown = Game.GetFormFromFile(0x01010FD6, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_GrayDk = Game.GetFormFromFile(0x01010FD7, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_GreenDk = Game.GetFormFromFile(0x01010FD4, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_GreenOlive = Game.GetFormFromFile(0x0100FE6A, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Grey = Game.GetFormFromFile(0x0100FE6B, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Manilla = Game.GetFormFromFile(0x0100FE6C, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Mechanist = Game.GetFormFromFile(0x0101103C, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Null = Game.GetFormFromFile(0x0100FE6F, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Orange = Game.GetFormFromFile(0x0100FE6D, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Pink = Game.GetFormFromFile(0x010103C9, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Red = Game.GetFormFromFile(0x0100FE6E, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_White = Game.GetFormFromFile(0x0100FE70, sDLC01) as ObjectMod
+	ObjectMod DLC01Bot_Paint_Yellow = Game.GetFormFromFile(0x0100FE71, sDLC01) as ObjectMod
+
+	;Add paint mods to exclusion list
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Aqua)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Black)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Blue)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_BlueDk)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_BlueLt)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Brown)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_GrayDk)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_GreenDk)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_GreenOlive)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Grey)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Manilla)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Mechanist)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Null)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Orange)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Pink)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Red)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_White)
+	DLC04Workbench_Paint_RemovalList.AddForm(DLC01Bot_Paint_Yellow)
+
+
+;/	;debug
+	debug.trace(self + "DLC01Workbench_ExclusionList.GetSize(): " + DLC01Workbench_ExclusionList.GetSize())
+	int i = 0
+	while (i < DLC01Workbench_ExclusionList.GetSize())
+		
+		debug.trace(self + "Arrays:")
+		debug.trace(self + "DLC01Workbench_ExclusionList --> [" + i + "] = " + DLC01Workbench_ExclusionList.GetAt(i))
+		debug.trace(self + "DLC01Workbench_RemovalList --> [" + i + "] = " +  DLC01Workbench_RemovalList.GetAt(i))
+
+		i += 1
+	endwhile
+/;
+EndFunction
+
+Event ObjectReference.OnItemAdded(ObjectReference akSender, Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akSourceContainer)
+	;Get the index of the item
+	int ItemIndex = ItemData.FindStruct("ModMiscItem", akBaseItem as MiscObject)
+	;if the index is valid, send the item's struct info
+	if ItemIndex > -1
+		ItemDatum FoundDatum = ItemData[ItemIndex]
+		;Check if we've already picked up this item, and if not, unlock mods with message
+		if (FoundDatum.ModUnlockGlobal.GetValue() != 1)
+			SetModGlobalAndShowMessage(FoundDatum.ModUnlockGlobal, FoundDatum.DLC04BotModMessage)
+;Removed because of separate count on DLC01 script
+;/			;------------------------------------------------------------
+			; FAB - Adding an achievement tracker for the recipes found
+			NumberOfUnlocks += 1
+			;Debug.Trace("Number of mods found: " + NumberOfUnlocks)
+			if ( NumberOfUnlocks >= 10 )
+				Game.AddAchievement(54)   ; Give the player Robot Hunter
+			endif
+/;			;------------------------------------------------------------
+		endif
+	endif
+EndEvent
+
+;Called by actors to determine which miscmod should be in their inventory
+Function AddMiscModToMe(ObjectReference akSender)
+	;Check if we're allowing robot mods to drop
+	if DLC01AllowRobotModUnlocksGlobal.GetValue() == 1
+		MiscObject[] AvailableMiscMods = New MiscObject[0]
+		MiscObject[] PreferredMiscMods = New MiscObject[0]
+		int i = 0
+		;Check the array for keyword matches
+		while i < ItemData.Length
+			;Store struct info
+			ItemDatum FoundDatum = ItemData[i]
+			;If the actor has the keyword of a struct, add miscmod to arrays
+			if akSender.HasKeyword(FoundDatum.BotModKeyword)
+				AvailableMiscMods.Add(FoundDatum.ModMiscItem)
+				;if the mod hasn't been picked up before, add to preferred
+				if FoundDatum.ModUnlockGlobal.GetValue() != 1
+					PreferredMiscMods.Add(FoundDatum.ModMiscItem)
+				endif
+			endif
+			i += 1
+		endwhile
+		;if there are no preferred mods, pick from any available
+		if PreferredMiscMods.Length == 0
+			PreferredMiscMods = AvailableMiscMods
+		endif
+		;Randomly select from the preferred mods 
+		int max = PreferredMiscMods.Length
+		if max > 0
+			int dieRoll = Utility.RandomInt(0, max - 1)
+			MiscObject MiscModToAdd = PreferredMiscMods[dieRoll]
+			;add miscmod to inventory
+			akSender.AddItem(MiscModToAdd)
+		endif
+	endif
+EndFunction
+
+Function SetModGlobalAndShowMessage(GlobalVariable ModUnlockGlobal, Message DLC01BotModMessage)
+	ModUnlockGlobal.SetValue(1)
+	DLC01BotModMessage.Show()
+EndFunction

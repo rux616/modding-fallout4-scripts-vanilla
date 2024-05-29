@@ -1,0 +1,1 @@
+Scriptname DLC03:DLC03CoA_FFNucleus02ObjTriggerScript extends ObjectReference Const

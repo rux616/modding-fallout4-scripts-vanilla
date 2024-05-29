@@ -1,0 +1,1 @@
+Scriptname CA_Interjection_Hates_Codsworth extends CA_Interjection_Hates Const

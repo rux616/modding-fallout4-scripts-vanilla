@@ -1,0 +1,1 @@
+Scriptname CA_Interjection_Hates_Curie extends CA_Interjection_Hates Const

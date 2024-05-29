@@ -1,0 +1,2 @@
+Scriptname AspirationalAddItemScript03 extends ObjectReference Conditional
+

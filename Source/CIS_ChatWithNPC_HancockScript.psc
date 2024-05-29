@@ -1,0 +1,3 @@
+Scriptname CIS_ChatWithNPC_HancockScript extends Quest Conditional
+
+Int Property iDialougeSet Auto Conditional

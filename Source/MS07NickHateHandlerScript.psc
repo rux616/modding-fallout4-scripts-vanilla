@@ -1,0 +1,3 @@
+Scriptname MS07NickHateHandlerScript extends Quest Conditional
+
+bool Property bEllieHatesPlayer Auto Conditional

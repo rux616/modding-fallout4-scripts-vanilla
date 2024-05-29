@@ -1,0 +1,1 @@
+Scriptname Inst305RadioRackTerminalSCRIPT extends ObjectReference Const

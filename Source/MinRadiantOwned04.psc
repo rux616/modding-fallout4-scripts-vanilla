@@ -1,0 +1,1 @@
+Scriptname MinRadiantOwned04 extends Quest

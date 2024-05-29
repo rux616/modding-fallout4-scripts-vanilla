@@ -1,0 +1,1 @@
+Scriptname CA_Interjection_Neutral_Curie extends TopicInfo Const
