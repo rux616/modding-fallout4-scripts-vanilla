@@ -1,0 +1,2 @@
+"C:\Projects\Fallout4\Build\PC\Papyrus compiler\PapyrusCompiler.exe" %1 -f="Institute_Papyrus_Flags.flg" -i="C:\Projects\Fallout4\Build\Source\Scripts" -o="C:\Projects\Fallout4\Build\PC\Data\Scripts" -op -r
+pause
